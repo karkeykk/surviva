@@ -12,13 +12,13 @@ router.get('/getHelp',function(req,res,next){
 });
 
 router.get('/getVerifiedHelp',function(req,res,next){
-    Victim.findById({status:true}).then(function(details){
+    Victim.find({status:true}).then(function(details){
         res.send(details);
     });
 });
 
 router.get('/getNotVerifiedHelp',function(req,res,next){
-    Victim.findById({status:false}).then(function(details){
+    Victim.find({status:false}).then(function(details){
         res.send(details);
     });
 });
