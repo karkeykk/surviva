@@ -26,7 +26,7 @@ const HelperSchema = new Schema({
         required: [true,'Location is required']
     },
     contact: {
-        type: Number,
+        type: String,
         required: [true,'Contact is required']
     },
     //resource: [ResourceSchema],
