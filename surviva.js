@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 
-mongoose.connect('mongodb://localhost/surviva/',{useNewUrlParser: true,useCreateIndex: true});
+mongoose.connect('mongodb://localhost/surviva',{useNewUrlParser: true,useCreateIndex: true});
 
 const app = express();
 
@@ -15,6 +15,6 @@ app.use(function(err,req,res,next){
     res.status(422).send({error:err});
 });
 
-app.listen(process.env.port||4000,function(){
+app.listen(process.env.port || 4002,function(){
     console.log('Listening for requests');
 });
