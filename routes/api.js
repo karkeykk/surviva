@@ -5,7 +5,7 @@ const Helper = require('../models/helper.js');
 const Victim = require('../models/victim.js');
 
 router.get('/getHelp',function(req,res,next){
-    Victim.find().then(function(details){
+    Victim.find({}).then(function(details){
         res.send(details);
     });
 });
