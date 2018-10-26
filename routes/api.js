@@ -25,9 +25,10 @@ let accessKey = '840cc8c3afcc4edb9e6910b408eff236';
 // a free trial access key, you should not need to change this region.
 
 var emotin = "";
+var flg=true;
 let uri = 'eastus.api.cognitive.microsoft.com';
 let path = '/text/analytics/v2.0/sentiment';
-let response_handler = function (response) {
+let response_handler =  function (response) {
     let body = '';
     response.on ('data', function (d) {
         body += d;
@@ -37,6 +38,7 @@ let response_handler = function (response) {
         //var body__ = JSON.stringify (body_, null, '  ');
         console.log(body_.documents[0].score);
         emotin=body_.documents[0].score;
+        flg=false;
         //console.log(emotin);
     });
     response.on ('error', function (e) {
@@ -44,7 +46,7 @@ let response_handler = function (response) {
     });
 };
 
-let get_sentiments = function (documents) {
+let get_sentiments =  function (documents) {
     let body = JSON.stringify (documents);
 
     let request_params = {
@@ -87,16 +89,13 @@ router.post('/addHelper',function(req,res,next){
     }).catch(next);
 });
 
-router.post('/addHelp',function(req,res,next){
+router.post('/addHelp',async function(req,res,next){
 	let documents = { 'documents': [
 		{'id': '1', 'language': 'en', 'text': req.body.probDesc}
 	]}
 	
-    
-    get_sentiments(documents);
-    
-    setTimeout(function afterTwoSeconds() {
-    
+    await get_sentiments(documents);
+    setTimeout(function(){ 
         Victim.create({
             probTitle:req.body.probTitle,
             probType:req.body.probType,
@@ -110,8 +109,6 @@ router.post('/addHelp',function(req,res,next){
             }).then(function(details){
                 res.send(details);
             }).catch(next);
-        }, 8000)
-      
+     }, 8000);  
 });
-
 module.exports = router;
