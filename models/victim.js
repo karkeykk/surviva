@@ -8,14 +8,14 @@ const VictimSchema = new Schema({
     },
     probType: {
         type: String,
-        required: [true,'Type is required']
+        //required: [true,'Type is required']
     },
     probDesc:{
         type: String
     },
     victimName:{
         type: String,
-        required: [true,'Name is required']
+        //required: [true,'Name is required']
     },
     status: String,
     emotion: String,
@@ -25,7 +25,7 @@ const VictimSchema = new Schema({
     },
     contact: {
         type: String,
-        required: [true,'Contact is required']
+        //required: [true,'Contact is required']
     },
     email: {
         type: String

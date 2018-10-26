@@ -83,6 +83,12 @@ router.get('/getNotVerifiedHelp',function(req,res,next){
     });
 });
 
+router.get('/deleteById/:id',function(req,res,next){
+    Victim.findByIdAndDelete({_id:req.params.id}).then(function(details){
+        res.send(details);
+    }).catch(next);
+});
+
 router.post('/addHelper',function(req,res,next){
     Helper.create(req.body).then(function(details){
         res.send(details);
@@ -111,4 +117,6 @@ router.post('/addHelp',async function(req,res,next){
             }).catch(next);
      }, 8000);  
 });
+
 module.exports = router;
+
