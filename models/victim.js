@@ -18,6 +18,7 @@ const VictimSchema = new Schema({
         required: [true,'Name is required']
     },
     status: String,
+    emotion: String,
     location: {
         type: String,
         required: [true,'Location is required']

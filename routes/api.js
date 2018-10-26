@@ -23,6 +23,8 @@ let accessKey = '840cc8c3afcc4edb9e6910b408eff236';
 
 // NOTE: Free trial access keys are generated in the westcentralus region, so if you are using
 // a free trial access key, you should not need to change this region.
+
+var emotin = "";
 let uri = 'eastus.api.cognitive.microsoft.com';
 let path = '/text/analytics/v2.0/sentiment';
 let response_handler = function (response) {
@@ -34,6 +36,8 @@ let response_handler = function (response) {
         let body_ = JSON.parse (body);
         //var body__ = JSON.stringify (body_, null, '  ');
         console.log(body_.documents[0].score);
+        emotin=body_.documents[0].score;
+        //console.log(emotin);
     });
     response.on ('error', function (e) {
         console.log ('Error: ' + e.message);
@@ -88,11 +92,26 @@ router.post('/addHelp',function(req,res,next){
 		{'id': '1', 'language': 'en', 'text': req.body.probDesc}
 	]}
 	
-	get_sentiments (documents);
-	
-   Victim.create(req.body).then(function(details){
-	res.send(details);
-    }).catch(next);
+    
+    get_sentiments(documents);
+    
+    setTimeout(function afterTwoSeconds() {
+    
+        Victim.create({
+            probTitle:req.body.probTitle,
+            probType:req.body.probType,
+            probDesc:req.body.probDesc,
+            emotion:emotin,
+            status:req.body.status,
+            victimName:req.body.victimName,
+            location:req.body.location,
+            contact:req.body.contact,
+            email:req.body.email
+            }).then(function(details){
+                res.send(details);
+            }).catch(next);
+        }, 8000)
+      
 });
 
 module.exports = router;
