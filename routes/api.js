@@ -83,6 +83,13 @@ router.get('/getNotVerifiedHelp',function(req,res,next){
     });
 });
 
+router.get('/getHelpByMobile/:id',function(req,res,next){
+    Victim.find({contact:req.params.id}).then(function(details){
+        res.send(details);
+    });
+});
+
+
 router.get('/deleteById/:id',function(req,res,next){
     Victim.findByIdAndDelete({_id:req.params.id}).then(function(details){
         res.send(details);
