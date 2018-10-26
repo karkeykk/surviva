@@ -6,6 +6,10 @@ mongoose.connect('mongodb://localhost/surviva',{useNewUrlParser: true,useCreateI
 
 const app = express();
 
+var cors = require('cors');
+
+app.use(cors());
+
 app.use(bodyParser.json());
 
 app.use('/surviva',require('./routes/api'));
