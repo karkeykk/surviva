@@ -8,6 +8,8 @@ const Victim = require('../models/victim.js');
 
 let https = require ('https');
 
+var promise = require('promise');
+
 // **********************************************
 // *** Update or verify the following values. ***
 // **********************************************
@@ -46,26 +48,44 @@ let response_handler =  function (response) {
     });
 };
 
-let get_sentiments =  function (documents) {
-    let body = JSON.stringify (documents);
+function get_sentiments(documents) {
+    return new Promise((resolve,reject) => {
+        let body = JSON.stringify (documents);
 
-    let request_params = {
-        method : 'POST',
-        hostname : uri,
-        path : path,
-        headers : {
-            'Ocp-Apim-Subscription-Key' : accessKey,
-        }
-    };
-    let req = https.request (request_params, response_handler);
-    req.write (body);
-    req.end ();
+        let request_params = {
+            method : 'POST',
+            hostname : uri,
+            path : path,
+            headers : {
+                'Ocp-Apim-Subscription-Key' : accessKey,
+            }
+        };
+        let req = https.request (request_params, response_handler);
+        req.write (body);
+        req.end ();
+        resolve(req);
+    });
 }
 
+function get_sentiment(documents) {
+    
+        let body = JSON.stringify (documents);
 
+        let request_params = {
+            method : 'POST',
+            hostname : uri,
+            path : path,
+            headers : {
+                'Ocp-Apim-Subscription-Key' : accessKey,
+            }
+        };
+        let req = https.request (request_params, response_handler);
+        req.write (body);
+        req.end ();
+        return(req);
+}
 
 router.get('/getHelp',function(req,res,next){
-    //console.log("gettttt");
     Victim.find({}).then(function(details){
         res.send(details);
     });
@@ -108,14 +128,16 @@ router.post('/addHelper',function(req,res,next){
     }).catch(next);
 });
 
-router.post('/addHelp',async function(req,res,next){
-	let documents = { 'documents': [
+var ctime = "";
+
+router.post('/addHelp',function(req,res,next){    
+    let documents = { 'documents': [
 		{'id': '1', 'language': 'en', 'text': req.body.probDesc}
 	]}
     var currentTime = Date();
     var len = currentTime.length;
     var flag = true;
-    var ctime="";
+   
     for(var i=0;i<len;i++){
         if(flag){
             if(currentTime[i]==' '){
@@ -131,8 +153,10 @@ router.post('/addHelp',async function(req,res,next){
             }
         }
     }
-    await get_sentiments(documents);
-    setTimeout(function(){ 
+    get_sentiments(documents).then(function(){
+        console.log("hello");
+    }); 
+    setTimeout(function(){
         Victim.create({
             probTitle:req.body.probTitle,
             probType:req.body.probType,
@@ -144,10 +168,51 @@ router.post('/addHelp',async function(req,res,next){
             contact:req.body.contact,
             time:ctime,
             email:req.body.email
-            }).then(function(details){
+        }).then(function(details){
                 res.send(details);
             }).catch(next);
-     }, 8000);  
+        },8000);
+});
+
+router.post('/addHep', async function(req,res,next){    
+    let documents = { 'documents': [
+		{'id': '1', 'language': 'en', 'text': req.body.probDesc}
+	]}
+    var currentTime = Date();
+    var len = currentTime.length;
+    var flag = true;
+   
+    for(var i=0;i<len;i++){
+        if(flag){
+            if(currentTime[i]==' '){
+                flag=false;
+            }
+        }else{
+            if(currentTime[i]==' '){ctime+=currentTime[i]}
+            else if(currentTime[i]=='G'){
+                break;
+            }
+            else{
+                ctime+=currentTime[i];
+            }
+        }
+    }
+    await get_sentiment(documents);
+        console.log("hii");
+        Victim.create({
+            probTitle:req.body.probTitle,
+            probType:req.body.probType,
+            probDesc:req.body.probDesc,
+            emotion:emotin,
+            status:req.body.status,
+            victimName:req.body.victimName,
+            location:req.body.location,
+            contact:req.body.contact,
+            time:ctime,
+            email:req.body.email
+        }).then(function(details){
+                res.send(details);
+            }).catch(next);
 });
 
 module.exports = router;
