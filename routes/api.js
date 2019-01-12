@@ -53,35 +53,53 @@ Access token:
 router.get('/getHelp', function (req, res, next) {
     Help.find({}).sort({emotion:1}).then(function (details) {
         res.send(details);
-    });
-
+    }).catch(next);
 });
 
-router.get('/getHelpByUser/:email', function (req, res, next) {
-    Help.find({ email: req.params.email }).then(function (details) {
+router.get('/getHelpByUser', async function (req, res, next) {
+    var email = "";
+    await verifyToken(req.headers['x-access-token'],function(emaill){
+        email = emaill;
+    });
+    Help.find({email : email}).then(function (details) {
         res.send(details);
+    }).catch(next);
+});
+
+router.get('/toggleStatus/:id', function (req, res, next) {
+    Help.findById({_id:req.params.id},async function(error,help){
+        //console.log("hii" + help.status);
+        help.status = !help.status;
+        //console.log(help.status);
+        await help.save(function(error){
+            if(error)
+                console.error('ERROR!');   
+            console.log("saved"); 
+        });
+        res.send(help);
     });
 });
 
-router.get('/getNotVerifiedHelp', function (req, res, next) {
-    Help.find({ status: false }).then(function (details) {
+router.get('/toggleStats/:id',function (req, res, next) {
+    Help.findOneAndUpdate({_id:req.params.id},{$set:{status: true}}).then(function (details) {
         res.send(details);
-    });
+    }).catch(next);
 });
+    
 
 router.get('/getHelpByMobile/:id', function (req, res, next) {
     Help.find({ contact: req.params.id }).then(function (details) {
         res.send(details);
-    });
+    }).catch(next);
 });
 
 router.get('/getHelp/:cat/:loc', function (req, res, next) {
     Help.find({ probType: req.params.cat, location: req.params.loc }).then(function (details) {
         res.send(details);
-    });
+    }).catch(next);
 });
 
-router.get('/deleteById/:id', function (req, res, next) {
+router.get('/deleteHelpById/:id', function (req, res, next) {
     Help.findByIdAndDelete({ _id: req.params.id }).then(function (details) {
         res.send(details);
     }).catch(next);
@@ -104,7 +122,7 @@ router.post('/addHelp',async function(req,res,next){
     instanceDisaster.defaults.headers.common['Ocp-Apim-Subscription-Key'] = '810e478db8d14548aa32f228c027725a';
 
     await instanceSent.post('/',documents).then(function(response){
-        console.log(response.data.documents[0].score);
+        //console.log(response.data.documents[0].score);
         emotionScore = response.data.documents[0].score;
         //res.status(200).send(response.data.documents[0].score.toString());
     }).catch(function(err){
@@ -116,7 +134,7 @@ router.post('/addHelp',async function(req,res,next){
 
     await verifyToken(req.headers['x-access-token'],function(emaill){
         email = emaill;
-        console.log(emaill);
+        //console.log(emaill);
     });
     
     Help.create({
@@ -130,7 +148,7 @@ router.post('/addHelp',async function(req,res,next){
         time: currentTime,
         email: email
     }).then(function (details) {
-        console.log("Details sent")
+        //console.log("Details sent")
         res.send(details);
     }).catch(next);
 });
@@ -237,7 +255,7 @@ router.get('/getWeatherAlerts/:lat/:lon',function(req,res,next){
 router.get('/getUsers',function(req,res,next){
     User.find({}).then(function(details){
         res.send(details);
-    }) 
+    }).catch(next);
 });
 
 router.get('/deleteUsersById/:id', function (req, res, next) {
@@ -256,10 +274,12 @@ router.post('/addGmailRecord', function(req,res,next){
             name : resp.data.name,
             email : resp.data.email
         }
+
         await User.create(body).then(function (details) {
             //res.send(details);
             console.log("User created");
         }).catch(next);
+
         var gmailtoken = jwt.sign({email: resp.data.email, name: resp.data.name}, "Fuck You Little Bitch");
         console.log("Token generated");
         res.send(gmailtoken);
@@ -296,21 +316,21 @@ async function verifyToken(accessToken,callback){
     });
 }
 
-router.post('/addFBRecord', function(req, res,next){
-    console.log("Before oauth");
-    //console.log(req.body.accessToken)
-    instanceOAuthFb.defaults.headers.common['Authorization'] = req.body.accessToken;
-    instanceOAuthFb.get('/me?fields=id,name,email').then(function(resp){
-        console.log(resp.email);
-        var fbtoken = jwt.sign({email: resp.email}, "Fuck You Little Bitch");
-        res.send(fbtoken);
-    }).catch(function(err){
-        if(err.response){
-            console.log(err.response.data);
-            res.send("Invalid or Expired Access Token");
-        }
-    });  
-});
+// router.post('/addFBRecord', function(req, res,next){
+//     console.log("Before oauth");
+//     //console.log(req.body.accessToken)
+//     instanceOAuthFb.defaults.headers.common['Authorization'] = 'Bearer ' +req.body.accessToken;
+//     instanceOAuthFb.get('/me?fields=id,name,email').then(function(resp){
+//         console.log(resp.email);
+//         var fbtoken = jwt.sign({email: resp.email}, "Fuck You Little Bitch");
+//         res.send(fbtoken);
+//     }).catch(function(err){
+//         if(err.response){
+//             console.log(err.response.data);
+//             res.send("Invalid or Expired Access Token");
+//         }
+//     });  
+// });
 
 //*******************ALL-IN-ALL ALAGHU RAJA******************
 

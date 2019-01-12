@@ -20,7 +20,7 @@ const HelpSchema = new Schema({
         type: String,
         required: [true,'Contact is required']
     },
-    status: String,
+    status: Boolean,
     emotion: String,
     location: {
         type: String,
