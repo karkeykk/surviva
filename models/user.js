@@ -16,25 +16,16 @@ const Schema = mongoose.Schema;
 //     }
 // });
 
-const HelperSchema = new Schema({
-    helperName:{
+const UserSchema = new Schema({
+    name:{
         type: String,
         required: [true,'Name is required']
     },
-    location: {
-        type: String,
-        required: [true,'Location is required']
-    },
-    contact: {
-        type: String,
-        required: [true,'Contact is required']
-    },
-    //resource: [ResourceSchema],
     email: {
         type: String
     },
 });
 
-const Helper = mongoose.model('helper',HelperSchema);
+const User = mongoose.model('user',UserSchema);
 
-module.exports = Helper;
+module.exports = User;

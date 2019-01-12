@@ -3,8 +3,8 @@
 const express = require('express');
 const router = express.Router();
 
-const Helper = require('../models/helper.js');
-const Victim = require('../models/victim.js');
+const User = require('../models/user.js');
+const Help = require('../models/help.js');
 
 let https = require('https');
 
@@ -26,8 +26,12 @@ var instanceWeather = axios.create({
     baseURL: 'http://api.openweathermap.org/data'
 });
 
-var instanceOAuth = axios.create({
+var instanceOAuthGmail = axios.create({
     baseURL: 'https://www.googleapis.com/oauth2/v2/userinfo'
+});
+
+var instanceOAuthFb = axios.create({
+    baseURL: 'https://www.graph.facebook.com/v3.2'
 });
 
 var instanceSent = axios.create({
@@ -47,47 +51,42 @@ Access token:
 //**********************HELP**********************
 
 router.get('/getHelp', function (req, res, next) {
-    Victim.find({}).then(function (details) {
+    Help.find({}).sort({emotion:1}).then(function (details) {
         res.send(details);
     });
 
 });
 
-router.get('/getVerifiedHelp', function (req, res, next) {
-    Victim.find({ status: true }).then(function (details) {
+router.get('/getHelpByUser/:email', function (req, res, next) {
+    Help.find({ email: req.params.email }).then(function (details) {
         res.send(details);
     });
 });
 
 router.get('/getNotVerifiedHelp', function (req, res, next) {
-    Victim.find({ status: false }).then(function (details) {
+    Help.find({ status: false }).then(function (details) {
         res.send(details);
     });
 });
 
 router.get('/getHelpByMobile/:id', function (req, res, next) {
-    Victim.find({ contact: req.params.id }).then(function (details) {
+    Help.find({ contact: req.params.id }).then(function (details) {
         res.send(details);
     });
 });
 
 router.get('/getHelp/:cat/:loc', function (req, res, next) {
-    Victim.find({ probType: req.params.cat, location: req.params.loc }).then(function (details) {
+    Help.find({ probType: req.params.cat, location: req.params.loc }).then(function (details) {
         res.send(details);
     });
 });
 
 router.get('/deleteById/:id', function (req, res, next) {
-    Victim.findByIdAndDelete({ _id: req.params.id }).then(function (details) {
+    Help.findByIdAndDelete({ _id: req.params.id }).then(function (details) {
         res.send(details);
     }).catch(next);
 });
 
-router.post('/addHelper', function (req, res, next) {
-    Helper.create(req.body).then(function (details) {
-        res.send(details);
-    }).catch(next);
-});
 
 router.post('/addHelp',async function(req,res,next){
     let documents = {
@@ -97,6 +96,7 @@ router.post('/addHelp',async function(req,res,next){
             'text': req.body.probDesc 
         }]
     };
+    var email = "";
     var emotionScore = "";
     var currentTime = Date();
     currentTime = currentTime.toString().slice(4,24);
@@ -104,7 +104,7 @@ router.post('/addHelp',async function(req,res,next){
     instanceDisaster.defaults.headers.common['Ocp-Apim-Subscription-Key'] = '810e478db8d14548aa32f228c027725a';
 
     await instanceSent.post('/',documents).then(function(response){
-        //console.log(response.data.documents[0].score);
+        console.log(response.data.documents[0].score);
         emotionScore = response.data.documents[0].score;
         //res.status(200).send(response.data.documents[0].score.toString());
     }).catch(function(err){
@@ -114,18 +114,23 @@ router.post('/addHelp',async function(req,res,next){
         }
     });
 
-    Victim.create({
+    await verifyToken(req.headers['x-access-token'],function(emaill){
+        email = emaill;
+        console.log(emaill);
+    });
+    
+    Help.create({
         probTitle: req.body.probTitle,
         probType: req.body.probType,
         probDesc: req.body.probDesc,
         emotion: emotionScore,
         status: req.body.status,
-        victimName: req.body.victimName,
         location: req.body.location,
         contact: req.body.contact,
         time: currentTime,
-        email: req.body.email
+        email: email
     }).then(function (details) {
+        console.log("Details sent")
         res.send(details);
     }).catch(next);
 });
@@ -227,15 +232,37 @@ router.get('/getWeatherAlerts/:lat/:lon',function(req,res,next){
     });  
 });
 
+/********************************************************/
+
+router.get('/getUsers',function(req,res,next){
+    User.find({}).then(function(details){
+        res.send(details);
+    }) 
+});
+
+router.get('/deleteUsersById/:id', function (req, res, next) {
+    User.findByIdAndDelete({ _id: req.params.id }).then(function (details) {
+        res.send(details);
+    }).catch(next);
+});
 
 //**********************OAUTH MODULE**********************
 
-router.post('/addRecord', function(req, res,next){
-    instanceOAuth.defaults.headers.common['Authorization'] = 'Bearer ' + req.body.accessToken;
-    instanceOAuth.get('/').then(function(resp){
-        console.log(resp.data.email);
-        var token = jwt.sign({email: resp.data.email}, "Fuck You Little Bitch");
-        res.send(token);
+router.post('/addGmailRecord', function(req,res,next){
+    instanceOAuthGmail.defaults.headers.common['Authorization'] = 'Bearer ' + req.body.accessToken;
+    instanceOAuthGmail.get('/').then(async function(resp){
+        //console.log(resp);
+        var body = {
+            name : resp.data.name,
+            email : resp.data.email
+        }
+        await User.create(body).then(function (details) {
+            //res.send(details);
+            console.log("User created");
+        }).catch(next);
+        var gmailtoken = jwt.sign({email: resp.data.email, name: resp.data.name}, "Fuck You Little Bitch");
+        console.log("Token generated");
+        res.send(gmailtoken);
     }).catch(function(err){
         if(err.response){
             console.log(err.response.data);
@@ -256,91 +283,38 @@ router.get('/verifyToken', function(req, res, next){
     });
 });
 
+async function verifyToken(accessToken,callback){
+    if (!accessToken) 
+        return "No token provided";
+  
+    await jwt.verify(accessToken, "Fuck You Little Bitch", function(err, decoded) {
+        if (err) 
+            return "Failed to authenticate token";
+        //res.status(200).send(decoded);
+        //console.log("in jwt "+decoded.email);
+        callback(decoded.email);
+    });
+}
+
+router.post('/addFBRecord', function(req, res,next){
+    console.log("Before oauth");
+    //console.log(req.body.accessToken)
+    instanceOAuthFb.defaults.headers.common['Authorization'] = req.body.accessToken;
+    instanceOAuthFb.get('/me?fields=id,name,email').then(function(resp){
+        console.log(resp.email);
+        var fbtoken = jwt.sign({email: resp.email}, "Fuck You Little Bitch");
+        res.send(fbtoken);
+    }).catch(function(err){
+        if(err.response){
+            console.log(err.response.data);
+            res.send("Invalid or Expired Access Token");
+        }
+    });  
+});
+
 //*******************ALL-IN-ALL ALAGHU RAJA******************
 
 var resultFinal = {};
-router.get('/getAlerts/:lat/:lon',async function(req,res,next){
-
-//***************DISASTER*****************
-
-    var currentDate = new Date();
-    currentDate = currentDate.toISOString().slice(0,10);
-    instanceDisaster.defaults.headers.common['Authorization'] = 'Bearer 7XvdQkOUUrShrqq3QrHCYmwfJod5Oy';
-    //instanceDisaster.get('/events/?limit=5&category=disasters, severe-weather, terror&label=air-quality, biological-hazard, cold-wave, disaster, disaster-warning, drought, dust, earthquake, environment-pollution, epidemic, explosion, fire, heat-wave, hostage-crisis, hurricane, mass-shooting, nuclear, suspected-bombing, suspected-attack, technological-disaster, terror, tornado, tsunami, typhoon, vehicle-accident, volcano, weather, weather-warning, wildfire&country=US&active.gte='+currentDate+'&/')
-    await instanceDisaster.get('/events/?limit=10&category=disasters, severe-weather, terror&country=US&active.gte='+currentDate+'&/').then(function(response){
-        var result = response.data.results;
-        var newResult = [];      
-        result.forEach(element => {
-            var tempObj={};
-            tempObj.title=element.title;
-            tempObj.description=element.description;
-            tempObj.start=element.start;
-            tempObj.end=element.end;
-            tempObj.updated=element.updated;
-            newResult.push(tempObj);
-        });
-        resultFinal.disaster = newResult;
-        console.log("Disaster");
-    }).catch(function(err){
-        if(err.response){
-            console.log(err.response.data);
-            res.send("Unable to retrieve disaster alerts");
-        }
-    });
-
-//****************NEWS*****************
-
-    var body = {
-        "filter":
-            {
-            "field": "country",
-            "value": ["India"],
-            "operator": "AND"
-            }
-    };
-    await instanceNews.post('/reports?appname=disassister',body).then(function(response){
-        var result = response.data.data;
-        var newResult = [];
-        
-        result.forEach(element => {
-            var tempObj={};
-            tempObj.id=element.id;
-            tempObj.title=element.fields.title;
-            newResult.push(tempObj);
-        });
-        resultFinal.news = newResult;
-        console.log("News");
-    }).catch(function(err){
-        if(err.response){
-            console.log(err.response.data);
-            res.send("Unable to retrieve news");
-        }
-    });  
-
-//*******************WEATHER*******************
-
-    await instanceWeather.get('/2.5/weather?lat='+req.params.lat+'&lon='+req.params.lon+'&appid=979e544ab2d464b05a32114170a8540f&units=metric').then(function(response){
-        var result = response.data;
-        var newResult = {};
-        newResult.description = result.weather[0].description;
-        newResult.temp = result.main.temp;
-        newResult.humidity = result.main.humidity;
-        newResult.windSpeed = result.wind.speed;
-        resultFinal.weather = newResult;
-        console.log("Weather");
-    }).catch(function(err){
-        if(err.response){
-            console.log(err.response.data);
-            res.send("Unable to retrieve weather alerts");
-        }
-    }); 
-
-    console.log("Final");
-    res.send(resultFinal);
-});
-  
-
-//*******************ALL-IN-ALL ALAGHU RAJA 2******************
 
 router.get('/getAllAlerts/:lat/:lon',async function(req,res,next){
     var la = req.params.lat;

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const VictimSchema = new Schema({
+const HelpSchema = new Schema({
     probTitle: {
         type: String,
         required: [true,'Title is required']
@@ -13,9 +13,12 @@ const VictimSchema = new Schema({
     probDesc:{
         type: String
     },
-    victimName:{
+    email:{
+        type: String
+    },
+    contact: {
         type: String,
-        //required: [true,'Name is required']
+        required: [true,'Contact is required']
     },
     status: String,
     emotion: String,
@@ -23,16 +26,9 @@ const VictimSchema = new Schema({
         type: String,
         required: [true,'Location is required']
     },
-    contact: {
-        type: String,
-        //required: [true,'Contact is required']
-    },
-    email: {
-        type: String
-    },
     time: String
 });
 
-const Victim = mongoose.model('help', VictimSchema);
+const Help = mongoose.model('help', HelpSchema);
 
-module.exports = Victim;
+module.exports = Help;
