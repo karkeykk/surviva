@@ -135,22 +135,26 @@ router.post('/addHelp',async function(req,res,next){
     await verifyToken(req.headers['x-access-token'],function(emaill){
         email = emaill;
         //console.log(emaill);
+        if(email == "No/Wrong token provided")
+            res.send({status: false, error: email});
+        
+        else{
+            Help.create({
+                probTitle: req.body.probTitle,
+                probType: req.body.probType,
+                probDesc: req.body.probDesc,
+                emotion: emotionScore,
+                status: req.body.status,
+                location: req.body.location,
+                contact: req.body.contact,
+                time: currentTime,
+                email: email
+            }).then(function (details) {
+                    res.send({status: true, details: details});
+            }).catch(next);
+        }
     });
     
-    Help.create({
-        probTitle: req.body.probTitle,
-        probType: req.body.probType,
-        probDesc: req.body.probDesc,
-        emotion: emotionScore,
-        status: req.body.status,
-        location: req.body.location,
-        contact: req.body.contact,
-        time: currentTime,
-        email: email
-    }).then(function (details) {
-        //console.log("Details sent")
-        res.send({status: true, details: details});
-    }).catch(next);
 });
 
 //**********************DISASTER ALERTS**********************
@@ -320,25 +324,25 @@ router.post('/addGmailRecord', function(req,res,next){
 router.get('/verifyToken', function(req, res, next){
     var rToken = req.headers['x-access-token'];
     if (!rToken) 
-        return res.status(401).send({ status: false, message: 'No token provided.' });
+        return res.status(401).send({ status: false, error: 'No token provided' });
   
     jwt.verify(rToken, "Fuck You Little Bitch", function(err, decoded) {
         if (err) 
-            return res.status(500).send({ status: false, message: 'Failed to authenticate token.' });
-        res.status(200).send(decoded);
+            return res.status(500).send({ status: false, error: 'Failed to authenticate token' });
+        res.status(200).send({status: true, message: decoded});
     });
 });
 
 async function verifyToken(accessToken,callback){
     if (!accessToken) 
-        return "No token provided";
+        callback("No/Wrong token provided");
   
     await jwt.verify(accessToken, "Fuck You Little Bitch", function(err, decoded) {
-        if (err) 
-            return "Failed to authenticate token";
+        if (!err) 
+            //callback("Failed to authenticate token");
         //res.status(200).send(decoded);
         //console.log("in jwt "+decoded.email);
-        callback(decoded.email);
+            callback(decoded.email);
     });
 }
 
