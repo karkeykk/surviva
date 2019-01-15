@@ -52,7 +52,7 @@ Access token:
 
 router.get('/getHelp', function (req, res, next) {
     Help.find({}).sort({emotion:1}).then(function (details) {
-        res.send(details);
+        res.send({status: true, details: details});
     }).catch(next);
 });
 
@@ -62,46 +62,46 @@ router.get('/getHelpByUser', async function (req, res, next) {
         email = emaill;
     });
     Help.find({email : email}).then(function (details) {
-        res.send(details);
+        res.send({status: true, details: details});
     }).catch(next);
 });
 
-router.get('/toggleStatus/:id', function (req, res, next) {
+router.get('/toggleVisibility/:id', function (req, res, next) {
     Help.findById({_id:req.params.id},async function(error,help){
         //console.log("hii" + help.status);
-        help.status = !help.status;
+        help.visible = !help.visible;
         //console.log(help.status);
         await help.save(function(error){
             if(error)
                 console.error('ERROR!');   
             console.log("saved"); 
         });
-        res.send(help);
+        res.send({status: true, help: help});
     });
 });
 
 router.get('/toggleStats/:id',function (req, res, next) {
     Help.findOneAndUpdate({_id:req.params.id},{$set:{status: true}}).then(function (details) {
-        res.send(details);
+        res.send({status: true, details: details});
     }).catch(next);
 });
     
 
 router.get('/getHelpByMobile/:id', function (req, res, next) {
     Help.find({ contact: req.params.id }).then(function (details) {
-        res.send(details);
+        res.send({status: true, details: details});
     }).catch(next);
 });
 
 router.get('/getHelp/:cat/:loc', function (req, res, next) {
     Help.find({ probType: req.params.cat, location: req.params.loc }).then(function (details) {
-        res.send(details);
+        res.send({status: true, details: details});
     }).catch(next);
 });
 
 router.get('/deleteHelpById/:id', function (req, res, next) {
     Help.findByIdAndDelete({ _id: req.params.id }).then(function (details) {
-        res.send(details);
+        res.send({status: true, details: details});
     }).catch(next);
 });
 
@@ -128,7 +128,7 @@ router.post('/addHelp',async function(req,res,next){
     }).catch(function(err){
         if(err.response){
             console.log(err.response.data);
-            res.send("Unable to retrieve sentiments");
+            res.send({status: false, error: "Unable to retrieve sentiments"});
         }
     });
 
@@ -149,7 +149,7 @@ router.post('/addHelp',async function(req,res,next){
         email: email
     }).then(function (details) {
         //console.log("Details sent")
-        res.send(details);
+        res.send({status: true, details: details});
     }).catch(next);
 });
 
@@ -175,11 +175,14 @@ router.get('/getDisasterAlerts',function(req,res,next){
             tempObj.updated=element.updated;
             newResult.push(tempObj);
         });
-        res.send(newResult);
+        var detail = {
+            response: newResult
+        }
+        res.send({status: true, details: detail});
     }).catch(function(err){
         if(err.response){
             console.log(err.response.data);
-            res.send("Unable to retrieve disaster alerts");
+            res.send({status: false, error:"Unable to retrieve disaster alerts"});
         }
     });
 });
@@ -194,11 +197,11 @@ router.get('/getNewsInfo/:id',function(req,res,next){
         newResult.title = result[0].fields.title;
         newResult.description = result[0].fields.body;
         newResult.url = result[0].fields.url;
-        res.send(newResult);
+        res.send({status: true, details: newResult});
     }).catch(function(err){
         if(err.response){
             console.log(err.response.data);
-            res.send("Unable to retrieve news");
+            res.send({status: false, error:"Unable to retrieve news"});
         }
     });
 });
@@ -222,11 +225,14 @@ router.get('/getAllNews',function(req,res,next){
             tempObj.title=element.fields.title;
             newResult.push(tempObj);
         });
-        res.send(newResult);
+        var detail = {
+            response : newResult
+        }
+        res.send({status: true, details: detail});
     }).catch(function(err){
         if(err.response){
             console.log(err.response.data);
-            res.send("Unable to retrieve news");
+            res.send({status: false, error:"Unable to retrieve news"});
         }
     });  
 });
@@ -234,18 +240,33 @@ router.get('/getAllNews',function(req,res,next){
 //**********************WEATHER ALERTS**********************
 
 router.get('/getWeatherAlerts/:lat/:lon',function(req,res,next){
-    instanceWeather.get('/2.5/weather?lat='+req.params.lat+'&lon='+req.params.lon+'&appid=979e544ab2d464b05a32114170a8540f&units=metric').then(function(response){
-        var result = response.data;
-        var newResult = {};
-        newResult.description = result.weather[0].description;
-        newResult.temp = result.main.temp;
-        newResult.humidity = result.main.humidity;
-        newResult.windSpeed = result.wind.speed;
-        res.send(newResult);
+    instanceWeather.get('/2.5/forecast?lat='+req.params.lat+'&lon='+req.params.lon+'&appid=979e544ab2d464b05a32114170a8540f&units=metric').then(function(response){
+        var result = response.data.list;
+        var i = 2;
+        var count = 5;
+        var newResult = [];
+
+        while(count > 0){
+            var tempObj={};
+            tempObj.description = result[i].weather[0].description;
+            tempObj.temp = result[i].main.temp;
+            tempObj.humidity = result[i].main.humidity;
+            tempObj.windSpeed = result[i].wind.speed;
+            tempObj.date = result[i].dt_txt.slice(0,10);
+            newResult.push(tempObj);
+            count-=1;
+            i+=8;
+        };
+    
+        var detail = {
+            response : newResult
+        }
+        
+        res.send({status: true, details: detail});
     }).catch(function(err){
         if(err.response){
             console.log(err.response.data);
-            res.send("Unable to retrieve weather alerts");
+            res.send({status: false, error:"Unable to retrieve weather alerts"});
         }
     });  
 });
@@ -254,13 +275,13 @@ router.get('/getWeatherAlerts/:lat/:lon',function(req,res,next){
 
 router.get('/getUsers',function(req,res,next){
     User.find({}).then(function(details){
-        res.send(details);
+        res.send({status: true, details: details});
     }).catch(next);
 });
 
 router.get('/deleteUsersById/:id', function (req, res, next) {
     User.findByIdAndDelete({ _id: req.params.id }).then(function (details) {
-        res.send(details);
+        res.send({status: true, details: details});
     }).catch(next);
 });
 
@@ -280,13 +301,18 @@ router.post('/addGmailRecord', function(req,res,next){
             console.log("User created");
         }).catch(next);
 
-        var gmailtoken = jwt.sign({email: resp.data.email, name: resp.data.name}, "Fuck You Little Bitch");
+        var gmailtoken = "";
+        gmailtoken = jwt.sign({email: resp.data.email, name: resp.data.name}, "Fuck You Little Bitch");
         console.log("Token generated");
-        res.send(gmailtoken);
+         
+        var response = {
+            token : gmailtoken
+        }
+        res.send({status: true, details: response});;
     }).catch(function(err){
         if(err.response){
             console.log(err.response.data);
-            res.send("Invalid or Expired Access Token");
+            res.send({status: false, error:"Invalid or Expired Access Token"});
         }
     });  
 });
@@ -294,11 +320,11 @@ router.post('/addGmailRecord', function(req,res,next){
 router.get('/verifyToken', function(req, res, next){
     var rToken = req.headers['x-access-token'];
     if (!rToken) 
-        return res.status(401).send({ auth: false, message: 'No token provided.' });
+        return res.status(401).send({ status: false, message: 'No token provided.' });
   
     jwt.verify(rToken, "Fuck You Little Bitch", function(err, decoded) {
         if (err) 
-            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+            return res.status(500).send({ status: false, message: 'Failed to authenticate token.' });
         res.status(200).send(decoded);
     });
 });
@@ -316,21 +342,21 @@ async function verifyToken(accessToken,callback){
     });
 }
 
-// router.post('/addFBRecord', function(req, res,next){
-//     console.log("Before oauth");
-//     //console.log(req.body.accessToken)
-//     instanceOAuthFb.defaults.headers.common['Authorization'] = 'Bearer ' +req.body.accessToken;
-//     instanceOAuthFb.get('/me?fields=id,name,email').then(function(resp){
-//         console.log(resp.email);
-//         var fbtoken = jwt.sign({email: resp.email}, "Fuck You Little Bitch");
-//         res.send(fbtoken);
-//     }).catch(function(err){
-//         if(err.response){
-//             console.log(err.response.data);
-//             res.send("Invalid or Expired Access Token");
-//         }
-//     });  
-// });
+router.post('/addFBRecord', function(req, res,next){
+    console.log("Before oauth");
+    //console.log(req.body.accessToken)
+    instanceOAuthFb.defaults.headers.common['Authorization'] = 'Bearer ' +req.body.accessToken;
+    instanceOAuthFb.get('/me?fields=id,name,email').then(function(resp){
+        console.log(resp.email);
+        var fbtoken = jwt.sign({email: resp.email}, "Fuck You Little Bitch");
+        res.send(fbtoken);
+    }).catch(function(err){
+        if(err.response){
+            console.log(err.response.data);
+            res.send({status: false, error:"Invalid or Expired Access Token"});
+        }
+    });  
+});
 
 //*******************ALL-IN-ALL ALAGHU RAJA******************
 
@@ -341,7 +367,7 @@ router.get('/getAllAlerts/:lat/:lon',async function(req,res,next){
     var lo = req.params.lon;
     await Promise.all([disasters(),news(),weathers(la,lo)]);
     console.log("Final");
-    res.send(resultFinal);
+    res.send({status: true, details: resultFinal});
 });
 
 //***************DISASTER*****************
@@ -363,12 +389,13 @@ async function disasters(){
             tempObj.updated=element.updated;
             newResult.push(tempObj);
         });
-        resultFinal.disaster = newResult;
+        var details = { response : newResult }
+        resultFinal.disaster = details;
         console.log("Disaster");
     }).catch(function(err){
         if(err.response){
             console.log(err.response.data);
-            res.send("Unable to retrieve disaster alerts");
+            res.send({status: false, error:"Unable to retrieve disaster alerts"});
         }
     });
 }
@@ -392,31 +419,48 @@ async function news(){
             tempObj.title=element.fields.title;
             newResult.push(tempObj);
         });
-        resultFinal.news = newResult;
+
+        var details = { response : newResult }
+        resultFinal.news = details;
         console.log("News");
     }).catch(function(err){
         if(err.response){
             console.log(err.response.data);
-            res.send("Unable to retrieve news");
+            res.send({status: false, error:"Unable to retrieve news"});
         }
     });  
 }
 //*******************WEATHER*******************
 
 async function weathers(la,lo){
-    await instanceWeather.get('/2.5/weather?lat='+la+'&lon='+lo+'&appid=979e544ab2d464b05a32114170a8540f&units=metric').then(function(response){
-        var result = response.data;
-        var newResult = {};
-        newResult.description = result.weather[0].description;
-        newResult.temp = result.main.temp;
-        newResult.humidity = result.main.humidity;
-        newResult.windSpeed = result.wind.speed;
-        resultFinal.weather = newResult;
+    await instanceWeather.get('/2.5/forecast?lat='+la+'&lon='+lo+'&appid=979e544ab2d464b05a32114170a8540f&units=metric').then(function(response){
+        var result = response.data.list;
+        var i = 2;
+        var count = 5;
+        var newResult = [];
+
+        while(count > 0){
+            var tempObj={};
+            tempObj.description = result[i].weather[0].description;
+            tempObj.temp = result[i].main.temp;
+            tempObj.humidity = result[i].main.humidity;
+            tempObj.windSpeed = result[i].wind.speed;
+            tempObj.date = result[i].dt_txt.slice(0,10);
+            newResult.push(tempObj);
+            count-=1;
+            i+=8;
+        };
+    
+        var detail = {
+            response : newResult
+        }
+
+        resultFinal.weather = detail;
         console.log("Weather");
     }).catch(function(err){
         if(err.response){
             console.log(err.response.data);
-            res.send("Unable to retrieve weather alerts");
+            res.send({status: false, error:"Unable to retrieve weather alerts"});
         }
     }); 
 }

@@ -16,7 +16,7 @@ app.use('/surviva',require('./routes/api'));
 
 app.use(function(err,req,res,next){
     console.log(err);
-    res.status(422).send({error:err});
+    res.status(422).send({status: false,error:err});
 });
 
 app.listen(process.env.port || 4002,function(){
