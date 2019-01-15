@@ -144,7 +144,7 @@ router.post('/addHelp',async function(req,res,next){
                 probType: req.body.probType,
                 probDesc: req.body.probDesc,
                 emotion: emotionScore,
-                status: req.body.status,
+                visible: true,
                 location: req.body.location,
                 contact: req.body.contact,
                 time: currentTime,
