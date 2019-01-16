@@ -292,20 +292,36 @@ router.get('/deleteUsersById/:id', function (req, res, next) {
 
 //**********************OAUTH MODULE**********************
 
+function isEmpty(obj) {
+    for(var key in obj) {
+        if(obj.hasOwnProperty(key))
+            return false;
+    }
+    return true;
+}
+
 router.post('/addGmailRecord', function(req,res,next){
     instanceOAuthGmail.defaults.headers.common['Authorization'] = 'Bearer ' + req.body.accessToken;
     instanceOAuthGmail.get('/').then(async function(resp){
-        //console.log(resp);
+        console.log(resp.data.email);
         var body = {
             name : resp.data.name,
             email : resp.data.email
         }
-
-        await User.create(body).then(function (details) {
-            //res.send(details);
-            console.log("User created");
-        }).catch(next);
-
+        await User.find({email: resp.data.email}).then(async function(details){
+            //console.log(details);
+            if(!isEmpty(details))
+                console.log("User exists");
+            else{
+                await User.create(body).then(function (details) {
+                    //res.send(details);
+                    //console.log("User created");
+                }).catch(next);
+                console.log("User created");
+            }
+        });     
+        
+      
         var gmailtoken = "";
         gmailtoken = jwt.sign({email: resp.data.email, name: resp.data.name}, "Fuck You Little Bitch");
         console.log("Token generated");

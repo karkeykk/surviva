@@ -19,6 +19,6 @@ app.use(function(err,req,res,next){
     res.status(422).send({status: false,error:err});
 });
 
-app.listen(process.env.port || 4002,function(){
+app.listen(process.env.port || 4001,function(){
     console.log('Listening for requests');
 });

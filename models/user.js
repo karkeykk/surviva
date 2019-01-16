@@ -17,13 +17,14 @@ const Schema = mongoose.Schema;
 // });
 
 const UserSchema = new Schema({
+   
     name:{
         type: String,
         required: [true,'Name is required']
     },
-    email: {
+    email:{
         type: String
-    },
+    }
 });
 
 const User = mongoose.model('user',UserSchema);
