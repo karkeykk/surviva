@@ -134,6 +134,7 @@ router.post('/addHelp',async function(req,res,next){
 
     await verifyToken(req.headers['x-access-token'],function(emaill){
         email = emaill;
+        var visible = true;
         //console.log(emaill);
         if(email == "No/Wrong token provided")
             res.send({status: false, error: email});
@@ -144,7 +145,7 @@ router.post('/addHelp',async function(req,res,next){
                 probType: req.body.probType,
                 probDesc: req.body.probDesc,
                 emotion: emotionScore,
-                visible: true,
+                visible: visible,
                 location: req.body.location,
                 contact: req.body.contact,
                 time: currentTime,
