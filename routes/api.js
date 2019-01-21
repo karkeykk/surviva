@@ -146,10 +146,12 @@ router.post('/addHelp',async function(req,res,next){
                 probDesc: req.body.probDesc,
                 emotion: emotionScore,
                 visible: visible,
+		        coordinates: req.body.coordinates,
+		        helpMode: req.body.helpMode,
                 location: req.body.location,
                 contact: req.body.contact,
                 time: currentTime,
-                email: email
+                email: email			
             }).then(function (details) {
                     res.send({status: true, details: details});
             }).catch(next);

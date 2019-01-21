@@ -21,6 +21,11 @@ const HelpSchema = new Schema({
         required: [true,'Contact is required']
     },
     visible: Boolean,
+    coordinates: {
+	lat: {type: String},
+	long: {type: String}
+    },
+    helpMode: Boolean,
     emotion: String,
     location: {
         type: String,
