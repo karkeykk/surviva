@@ -13,6 +13,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.use('/surviva',require('./routes/api'));
+app.use('/surviva/fund', require('./routes/fund'));
 
 app.use(function(err,req,res,next){
     console.log(err);
