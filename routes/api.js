@@ -58,11 +58,13 @@ router.get('/getHelp', function (req, res, next) {
 
 router.get('/getHelpByUser', async function (req, res, next) {
     var email = "";
-    await verifyToken(req.headers['x-access-token'],function(emaill){
-        email = emaill;
+    var profile = "";
+    await verifyToken(req.headers['x-access-token'],function(profille){
+        email = profile.email;
+        profile = profille;
     });
     Help.find({email : email}).then(function (details) {
-        res.send({status: true, details: details});
+        res.send({status: true, profile: profile, details: details});
     }).catch(next);
 });
 
@@ -132,8 +134,8 @@ router.post('/addHelp',async function(req,res,next){
         }
     });
 
-    await verifyToken(req.headers['x-access-token'],function(emaill){
-        email = emaill;
+    await verifyToken(req.headers['x-access-token'],function(profile){
+        email = profile.email;
         var visible = true;
         //console.log(emaill);
         if(email == "No/Wrong token provided")
@@ -357,11 +359,13 @@ async function verifyToken(accessToken,callback){
         callback("No/Wrong token provided");
   
     await jwt.verify(accessToken, "Fuck You Little Bitch", function(err, decoded) {
-        if (!err) 
-            //callback("Failed to authenticate token");
-        //res.status(200).send(decoded);
-        //console.log("in jwt "+decoded.email);
-            callback(decoded.email);
+        if (!err){ 
+            var profile = {
+                name: decoded.name,
+                email: decoded.email
+            }
+            callback(profile);
+        }
     });
 }
 
