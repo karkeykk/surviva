@@ -51,7 +51,7 @@ Access token:
 //**********************HELP**********************
 
 router.get('/getHelp', function (req, res, next) {
-    Help.find({}).sort({emotion:1}).then(function (details) {
+    Help.find({}).sort({createdAt: -1}).then(function (details) {
         res.send({status: true, details: details});
     }).catch(next);
 });
@@ -117,7 +117,7 @@ router.post('/addHelp',async function(req,res,next){
         }]
     };
     var email = "";
-    var emotionScore = "";
+    var emotionScore = 0;
     var currentTime = Date();
     currentTime = currentTime.toString().slice(4,24);
 
